@@ -1,51 +1,11 @@
-const { Client, GatewayIntentBits } = require('discord.js');
-const {
-  joinVoiceChannel,
-  createAudioPlayer,
-  createAudioResource,
-  AudioPlayerStatus,
-  VoiceConnectionStatus
-} = require('@discordjs/voice');
-const prism = require('prism-media');
-const { Readable } = require('stream');
+function connect(channelId, guild) {
+  if (connections.has(channelId)) return;
 
-const TOKEN = 'TOKEN_HERE';
-const GUILD_ID = 'GUILD_ID_HERE';
-
-// حط 5 رومات فويس هنا
-const VOICE_CHANNELS = [
-  '1411263430450610220',
-  '1420430426920456302',
-  '1451255391408357498',
-  '1451255424304156846',
-  '1451255466096328869'
-];
-
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildVoiceStates
-  ]
-});
-
-const connections = new Map();
-
-// ستريم صوت صامت
-function silentStream() {
-  const opus = new prism.opus.Encoder({ rate: 48000, channels: 2, frameSize: 960 });
-  const stream = new Readable({
-    read() {
-      this.push(Buffer.alloc(3840));
-    }
-  });
-  return stream.pipe(opus);
-}
-
-function connect(channel, guild) {
-  if (connections.has(channel)) return;
+  const channel = guild.channels.cache.get(channelId);
+  if (!channel || channel.type !== 2) return; // Voice channel فقط
 
   const connection = joinVoiceChannel({
-    channelId: channel,
+    channelId: channel.id,
     guildId: guild.id,
     adapterCreator: guild.voiceAdapterCreator,
     selfMute: false,
@@ -63,22 +23,14 @@ function connect(channel, guild) {
   });
 
   connection.on(VoiceConnectionStatus.Disconnected, () => {
-    connections.delete(channel);
-    setTimeout(() => connect(channel, guild), 5000);
+    connections.delete(channelId);
+    setTimeout(() => connect(channelId, guild), 5000);
   });
 
-  connections.set(channel, connection);
+  connection.on(VoiceConnectionStatus.Destroyed, () => {
+    connections.delete(channelId);
+    setTimeout(() => connect(channelId, guild), 5000);
+  });
+
+  connections.set(channelId, connection);
 }
-
-client.once('ready', () => {
-  console.log(`Logged in as ${client.user.tag}`);
-  const guild = client.guilds.cache.get(GUILD_ID);
-  if (!guild) return;
-
-  VOICE_CHANNELS.forEach(vc => connect(vc, guild));
-});
-
-client.login(process.env.TOKEN);
-
-
-
