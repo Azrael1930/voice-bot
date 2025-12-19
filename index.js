@@ -1,8 +1,18 @@
-function connect(channelId, guild) {
+async function connect(channelId, guild) {
   if (connections.has(channelId)) return;
 
-  const channel = guild.channels.cache.get(channelId);
-  if (!channel || channel.type !== 2) return; // Voice channel فقط
+  let channel;
+  try {
+    channel = await guild.channels.fetch(channelId);
+  } catch (e) {
+    console.log(`❌ ما قدرت أجيب الروم: ${channelId}`);
+    return;
+  }
+
+  if (!channel || channel.type !== 2) {
+    console.log(`❌ الروم مو فويس: ${channelId}`);
+    return;
+  }
 
   const connection = joinVoiceChannel({
     channelId: channel.id,
@@ -33,4 +43,6 @@ function connect(channelId, guild) {
   });
 
   connections.set(channelId, connection);
+
+  console.log(`✅ دخل الفويس: ${channel.name}`);
 }
