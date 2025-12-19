@@ -1,3 +1,4 @@
+const { Client, GatewayIntentBits } = require("discord.js");
 const {
   joinVoiceChannel,
   createAudioPlayer,
@@ -7,12 +8,18 @@ const {
   NoSubscriberBehavior,
   StreamType
 } = require("@discordjs/voice");
-
 const { Readable } = require("stream");
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildVoiceStates
+  ]
+});
 
 const connections = new Map();
 
-/* 🔇 صوت وهمي عشان البوت ما ينسحب */
+/* 🔇 ستريم صامت */
 function silentStream() {
   return new Readable({
     read() {
@@ -21,20 +28,20 @@ function silentStream() {
   });
 }
 
-/* 🎧 الدالة الكاملة */
+/* 🎧 الاتصال بالفويس */
 async function connect(channelId, guild) {
   if (connections.has(channelId)) return;
 
   let channel;
   try {
     channel = await guild.channels.fetch(channelId);
-  } catch (err) {
-    console.log(`❌ ما قدرت أجيب الروم: ${channelId}`);
+  } catch {
+    console.log("❌ ما لقى الروم");
     return;
   }
 
   if (!channel || channel.type !== 2) {
-    console.log(`❌ الروم مو فويس: ${channelId}`);
+    console.log("❌ مو روم فويس");
     return;
   }
 
@@ -42,14 +49,12 @@ async function connect(channelId, guild) {
     channelId: channel.id,
     guildId: guild.id,
     adapterCreator: guild.voiceAdapterCreator,
-    selfMute: false,
-    selfDeaf: true
+    selfDeaf: true,
+    selfMute: false
   });
 
   const player = createAudioPlayer({
-    behaviors: {
-      noSubscriber: NoSubscriberBehavior.Play
-    }
+    behaviors: { noSubscriber: NoSubscriberBehavior.Play }
   });
 
   const resource = createAudioResource(silentStream(), {
@@ -59,28 +64,32 @@ async function connect(channelId, guild) {
   player.play(resource);
   connection.subscribe(player);
 
-  // 🔁 لو وقف الصوت يرجع يشغله
   player.on(AudioPlayerStatus.Idle, () => {
     player.play(
-      createAudioResource(silentStream(), {
-        inputType: StreamType.Raw
-      })
+      createAudioResource(silentStream(), { inputType: StreamType.Raw })
     );
   });
 
-  // 🔁 لو انقطع يرجع يدخل
   connection.on(VoiceConnectionStatus.Disconnected, () => {
     connections.delete(channelId);
-    console.log("🔄 انقطع الاتصال.. إعادة الدخول");
-    setTimeout(() => connect(channelId, guild), 3000);
-  });
-
-  connection.on(VoiceConnectionStatus.Destroyed, () => {
-    connections.delete(channelId);
-    console.log("❌ تم التدمير.. إعادة الدخول");
     setTimeout(() => connect(channelId, guild), 3000);
   });
 
   connections.set(channelId, connection);
-  console.log(`✅ دخل وثبت في الفويس: ${channel.name}`);
+  console.log(`✅ ثابت في الفويس: ${channel.name}`);
 }
+
+/* 🚀 جاهزية البوت */
+client.once("ready", async () => {
+  console.log(`🤖 Logged in as ${client.user.tag}`);
+
+  const guild = await client.guilds.fetch(process.env.GUILD_ID);
+  connect(process.env.VOICE_ID, guild);
+});
+
+/* 🔒 KEEP ALIVE — هذا هو الحل */
+setInterval(() => {
+  console.log("🟢 alive");
+}, 60 * 1000);
+
+client.login(process.env.TOKEN);
