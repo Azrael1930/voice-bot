@@ -51,16 +51,21 @@ async function connect(channelId, guild) {
   });
 
   connections.set(channelId, connection);
-  console.log(`✅ Connected to ${channel.name}`);
+  console.log(`✅ دخل الفويس: ${channel.name}`);
 }
 
-client.once("ready", () => {
+client.once("ready", async () => {
   console.log(`🤖 Logged in as ${client.user.tag}`);
 
-  const guild = client.guilds.cache.get(process.env.GUILD_ID);
+  const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
   if (!guild) return console.log("❌ Guild not found");
 
   connect(process.env.VOICE_CHANNEL_ID, guild);
 });
+
+// 🔒 هذا السطر هو اللي يمنع الكراش
+setInterval(() => {
+  console.log("🟢 Bot alive");
+}, 60_000);
 
 client.login(process.env.DISCORD_TOKEN);
