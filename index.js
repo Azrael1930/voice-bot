@@ -78,4 +78,4 @@ client.once('ready', () => {
   VOICE_CHANNELS.forEach(vc => connect(vc, guild));
 });
 
-client.login(TOKEN);
+client.login(process.env.TOKEN);
