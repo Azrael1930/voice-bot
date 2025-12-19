@@ -1,8 +1,5 @@
 const { Client, GatewayIntentBits } = require("discord.js");
-const {
-  joinVoiceChannel,
-  VoiceConnectionStatus,
-} = require("@discordjs/voice");
+const { joinVoiceChannel } = require("@discordjs/voice");
 
 const client = new Client({
   intents: [
@@ -13,36 +10,26 @@ const client = new Client({
 
 const VOICE_CHANNEL_ID = process.env.VOICE_CHANNEL_ID;
 
-client.once("ready", async () => {
+client.once("ready", () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 
-  for (const guild of client.guilds.cache.values()) {
+  client.guilds.cache.forEach((guild) => {
     const channel = guild.channels.cache.get(VOICE_CHANNEL_ID);
-    if (!channel) continue;
+    if (!channel) return;
 
-    const connection = joinVoiceChannel({
+    joinVoiceChannel({
       channelId: channel.id,
       guildId: guild.id,
       adapterCreator: guild.voiceAdapterCreator,
-      selfMute: false,
       selfDeaf: true,
-    });
-
-    connection.on(VoiceConnectionStatus.Disconnected, () => {
-      console.log("🔁 Reconnecting...");
-      setTimeout(() => {
-        joinVoiceChannel({
-          channelId: channel.id,
-          guildId: guild.id,
-          adapterCreator: guild.voiceAdapterCreator,
-          selfMute: false,
-          selfDeaf: true,
-        });
-      }, 3000);
+      selfMute: false,
     });
 
     console.log(`🎧 Joined ${channel.name}`);
-  }
+  });
 });
+
+// 🔒 هذا السطر هو اللي يمنع الكراش
+setInterval(() => {}, 1 << 30);
 
 client.login(process.env.DISCORD_TOKEN);
