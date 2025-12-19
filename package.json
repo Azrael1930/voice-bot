@@ -1,5 +1,5 @@
 {
-  "name": "voice-bot",
+  "name": "multi-voice-bot",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
