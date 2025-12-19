@@ -14,11 +14,11 @@ const GUILD_ID = 'GUILD_ID_HERE';
 
 // حط 5 رومات فويس هنا
 const VOICE_CHANNELS = [
-  'VOICE_ID_1',
-  'VOICE_ID_2',
-  'VOICE_ID_3',
-  'VOICE_ID_4',
-  'VOICE_ID_5'
+  '1411263430450610220',
+  '1420430426920456302',
+  '1451255391408357498',
+  '1451255424304156846',
+  '1451255466096328869'
 ];
 
 const client = new Client({
@@ -79,3 +79,4 @@ client.once('ready', () => {
 });
 
 client.login(process.env.TOKEN);
+
