@@ -1,33 +1,48 @@
-const { Client, GatewayIntentBits, ChannelType } = require('discord.js');
-const { joinVoiceChannel } = require('@discordjs/voice');
+const { Client, GatewayIntentBits } = require("discord.js");
+const {
+  joinVoiceChannel,
+  VoiceConnectionStatus,
+} = require("@discordjs/voice");
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildVoiceStates
-  ]
+    GatewayIntentBits.GuildVoiceStates,
+  ],
 });
 
-client.once('ready', async () => {
+const VOICE_CHANNEL_ID = process.env.VOICE_CHANNEL_ID;
+
+client.once("ready", async () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 
-  const guild = await client.guilds.fetch(process.env.GUILD_ID);
-  const channel = await guild.channels.fetch(process.env.VOICE_CHANNEL_ID);
+  for (const guild of client.guilds.cache.values()) {
+    const channel = guild.channels.cache.get(VOICE_CHANNEL_ID);
+    if (!channel) continue;
 
-  if (!channel || channel.type !== ChannelType.GuildVoice) {
-    console.log('❌ روم فويس غير صحيح');
-    return;
+    const connection = joinVoiceChannel({
+      channelId: channel.id,
+      guildId: guild.id,
+      adapterCreator: guild.voiceAdapterCreator,
+      selfMute: false,
+      selfDeaf: true,
+    });
+
+    connection.on(VoiceConnectionStatus.Disconnected, () => {
+      console.log("🔁 Reconnecting...");
+      setTimeout(() => {
+        joinVoiceChannel({
+          channelId: channel.id,
+          guildId: guild.id,
+          adapterCreator: guild.voiceAdapterCreator,
+          selfMute: false,
+          selfDeaf: true,
+        });
+      }, 3000);
+    });
+
+    console.log(`🎧 Joined ${channel.name}`);
   }
-
-  joinVoiceChannel({
-    channelId: channel.id,
-    guildId: guild.id,
-    adapterCreator: guild.voiceAdapterCreator,
-    selfMute: true,
-    selfDeaf: true
-  });
-
-  console.log(`🎧 دخل الفويس: ${channel.name}`);
 });
 
-client.login(process.env.TOKEN);
+client.login(process.env.DISCORD_TOKEN);
