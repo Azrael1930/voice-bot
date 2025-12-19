@@ -1,10 +1,11 @@
 async function connect(channelId, guild) {
+  if (!channelId) return;
   if (connections.has(channelId)) return;
 
   let channel;
   try {
     channel = await guild.channels.fetch(channelId);
-  } catch (e) {
+  } catch (err) {
     console.log(`❌ ما قدرت أجيب الروم: ${channelId}`);
     return;
   }
@@ -43,6 +44,5 @@ async function connect(channelId, guild) {
   });
 
   connections.set(channelId, connection);
-
   console.log(`✅ دخل الفويس: ${channel.name}`);
 }
